@@ -1,0 +1,33 @@
+2026/06/26-15:05:33.991 406c Reusing MANIFEST C:\Users\Fernanda\AppData\Local\Temp\flutter_tools.1e75ab06\flutter_tools_chrome_device.3d65a0f5\Default\EdgeCoupons/coupons_data.db/MANIFEST-000001
+2026/06/26-15:05:33.994 406c Recovering log #49
+2026/06/26-15:05:33.994 406c Reusing old log C:\Users\Fernanda\AppData\Local\Temp\flutter_tools.1e75ab06\flutter_tools_chrome_device.3d65a0f5\Default\EdgeCoupons/coupons_data.db/000049.log 
+2026/06/26-15:05:33.996 406c Delete type=0 #3
+2026/06/26-15:05:33.997 406c Delete type=0 #4
+2026/06/26-15:05:33.997 406c Delete type=0 #7
+2026/06/26-15:05:33.997 406c Delete type=2 #8
+2026/06/26-15:05:33.997 406c Delete type=0 #10
+2026/06/26-15:05:33.997 406c Delete type=2 #11
+2026/06/26-15:05:33.997 406c Delete type=0 #13
+2026/06/26-15:05:34.030 406c Delete type=2 #14
+2026/06/26-15:05:34.282 406c Delete type=0 #16
+2026/06/26-15:05:34.282 406c Delete type=2 #17
+2026/06/26-15:05:34.298 406c Delete type=0 #19
+2026/06/26-15:05:34.299 406c Delete type=2 #21
+2026/06/26-15:05:34.299 406c Delete type=0 #23
+2026/06/26-15:05:34.313 406c Delete type=2 #24
+2026/06/26-15:05:34.328 406c Delete type=0 #26
+2026/06/26-15:05:34.344 406c Delete type=2 #27
+2026/06/26-15:05:34.344 406c Delete type=0 #29
+2026/06/26-15:05:34.345 406c Delete type=2 #30
+2026/06/26-15:05:34.345 406c Delete type=0 #32
+2026/06/26-15:05:34.346 406c Delete type=2 #34
+2026/06/26-15:05:34.346 406c Delete type=0 #36
+2026/06/26-15:05:34.346 406c Delete type=2 #37
+2026/06/26-15:05:34.374 406c Delete type=0 #39
+2026/06/26-15:05:34.374 406c Delete type=2 #40
+2026/06/26-15:05:34.375 406c Delete type=0 #42
+2026/06/26-15:05:34.375 406c Delete type=2 #43
+2026/06/26-15:05:34.376 406c Delete type=0 #45
+2026/06/26-15:13:08.691 3624 Level-0 table #53: started
+2026/06/26-15:13:08.765 3624 Level-0 table #53: 682903 bytes OK
+2026/06/26-15:13:08.776 3624 Delete type=0 #49
