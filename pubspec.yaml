@@ -1,0 +1,32 @@
+name: patrimonia
+description: Narrador cultural inteligente de patrimonio intangible de comunidades de Chiapas y México.
+publish_to: 'none'
+
+environment:
+  sdk: ^3.12.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  # Estado y Navegación
+  flutter_riverpod: ^2.4.9
+  go_router: ^12.1.1
+  # UI y Diseño
+  google_fonts: ^6.1.0
+  device_preview: ^1.1.0
+  # Utilidades futuras (Audio, Permisos, etc.)
+  just_audio: ^0.9.36
+  record: ^5.0.5
+  permission_handler: ^11.3.0
+  intl: 0.20.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.1
+  build_runner: ^2.4.7
+
+flutter:
+  uses-material-design: true
