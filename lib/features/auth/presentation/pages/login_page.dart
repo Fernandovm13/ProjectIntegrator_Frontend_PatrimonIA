@@ -26,9 +26,9 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     super.dispose();
   }
 
-  void _doLogin() {
+  Future<void> _doLogin() async {
     if (!_formKey.currentState!.validate()) return;
-    ref.read(authProvider.notifier).login(
+    await ref.read(authProvider.notifier).login(
       email: _emailController.text.trim(),
       password: _passwordController.text,
     );
@@ -36,6 +36,8 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
+    final authState = ref.watch(authProvider);
+
     return Scaffold(
       backgroundColor: context.surface,
       body: SingleChildScrollView(
@@ -105,9 +107,19 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                           v != null && v.length >= 3 ? null : 'Mínimo 3 caracteres',
                     ),
                     const SizedBox(height: 32),
+                    if (authState.errorMessage != null) ...[
+                      Text(
+                        authState.errorMessage!,
+                        style: const TextStyle(
+                          color: Colors.red,
+                          fontSize: 13,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                    ],
                     PrimaryButton(
-                      text: 'Iniciar sesión',
-                      onPressed: _doLogin,
+                      text: authState.isLoading ? 'Iniciando...' : 'Iniciar sesión',
+                      onPressed: authState.isLoading ? null : _doLogin,
                     ),
                     const SizedBox(height: 20),
                     Row(
@@ -144,7 +156,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                           ),
                         ),
                         onPressed: () {
-                          ref.read(authProvider.notifier).login();
+                          ref.read(authProvider.notifier).loginAnonymously();
                         },
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,

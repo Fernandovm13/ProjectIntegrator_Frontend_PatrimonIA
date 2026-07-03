@@ -29,17 +29,20 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
     super.dispose();
   }
 
-  void _doRegister() {
+  Future<void> _doRegister() async {
     if (!_formKey.currentState!.validate()) return;
-    ref.read(authProvider.notifier).register(
+    await ref.read(authProvider.notifier).register(
       name: _nameController.text.trim(),
       email: _emailController.text.trim(),
+      password: _passwordController.text,
       role: selectedRole,
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final authState = ref.watch(authProvider);
+
     return Scaffold(
       backgroundColor: context.surface,
       body: SingleChildScrollView(
@@ -150,9 +153,19 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                       ],
                     ),
                     const SizedBox(height: 32),
+                    if (authState.errorMessage != null) ...[
+                      Text(
+                        authState.errorMessage!,
+                        style: const TextStyle(
+                          color: Colors.red,
+                          fontSize: 13,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                    ],
                     PrimaryButton(
-                      text: 'Crear cuenta',
-                      onPressed: _doRegister,
+                      text: authState.isLoading ? 'Creando...' : 'Crear cuenta',
+                      onPressed: authState.isLoading ? null : _doRegister,
                     ),
                   ],
                 ),

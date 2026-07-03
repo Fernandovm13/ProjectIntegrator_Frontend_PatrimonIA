@@ -3,7 +3,7 @@ import '../theme/theme_colors_extension.dart';
 
 class PrimaryButton extends StatelessWidget {
   final String text;
-  final VoidCallback onPressed;
+  final VoidCallback? onPressed;
   final Color? color;
 
   const PrimaryButton({
