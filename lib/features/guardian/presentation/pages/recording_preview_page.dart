@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+
 import '../../../../shared/theme/app_colors.dart';
 import '../../../../shared/theme/theme_colors_extension.dart';
-import '../../../../core/models/memory.dart';
+import '../../../explore/presentation/providers/community_provider.dart';
 import '../../../explore/presentation/providers/memory_provider.dart';
 
 class RecordingPreviewPage extends ConsumerWidget {
@@ -13,6 +14,10 @@ class RecordingPreviewPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final extra = GoRouterState.of(context).extra as Map<String, dynamic>?;
     final category = extra?['category'] as String? ?? 'Leyenda';
+    final title = extra?['title'] as String? ?? 'Nueva memoria';
+    final transcription = extra?['transcription'] as String? ?? '';
+    final selectedCommunity = ref.watch(communityProvider).selected;
+    final communityId = int.tryParse(selectedCommunity?.id ?? '');
 
     return Scaffold(
       backgroundColor: context.surface,
@@ -98,14 +103,10 @@ class RecordingPreviewPage extends ConsumerWidget {
             const SizedBox(height: 24),
             Row(
               children: [
-                Icon(
-                  Icons.edit_note,
-                  size: 18,
-                  color: context.sacredJade,
-                ),
+                Icon(Icons.edit_note, size: 18, color: context.sacredJade),
                 const SizedBox(width: 6),
                 Text(
-                  'Transcripción automática',
+                  'Transcripcion automatica',
                   style: TextStyle(
                     fontFamily: 'Playfair Display',
                     fontWeight: FontWeight.bold,
@@ -127,9 +128,11 @@ class RecordingPreviewPage extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    '"Mi abuelo me contaba que en las noches frías de Zinacantán se escuchaban silbidos entre las milpas, no eran pájaros, era el viento del duende..."',
-                    style: TextStyle(
+                  Text(
+                    transcription.isEmpty
+                        ? 'Transcripcion no disponible.'
+                        : transcription,
+                    style: const TextStyle(
                       fontSize: 14,
                       color: AppColors.textOnLightBody,
                       height: 1.4,
@@ -139,14 +142,10 @@ class RecordingPreviewPage extends ConsumerWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
-                      Icon(
-                        Icons.edit,
-                        size: 14,
-                        color: context.sacredJade,
-                      ),
+                      Icon(Icons.edit, size: 14, color: context.sacredJade),
                       const SizedBox(width: 4),
                       Text(
-                        'Editar transcripción',
+                        'Editar transcripcion',
                         style: TextStyle(
                           color: context.sacredJade,
                           fontSize: 12,
@@ -179,7 +178,7 @@ class RecordingPreviewPage extends ConsumerWidget {
                 const SizedBox(width: 8),
                 _buildMetaChip(
                   Icons.location_on,
-                  'San Cristóbal de las Casas',
+                  selectedCommunity?.name ?? 'Comunidad',
                   context.textSecondary,
                 ),
               ],
@@ -196,24 +195,43 @@ class RecordingPreviewPage extends ConsumerWidget {
                     borderRadius: BorderRadius.circular(8),
                   ),
                 ),
-                onPressed: () {
-                  final catColor = AppColors.categoryColor(category);
-                  final memory = Memory(
-                    id: DateTime.now().millisecondsSinceEpoch.toString(),
-                    title: 'Nueva memoria',
-                    category: category,
-                    location: 'San Cristóbal',
-                    content:
-                        '"Mi abuelo me contaba que en las noches frías de Zinacantán se escuchaban silbidos entre las milpas, no eran pájaros, era el viento del duende..."',
-                    author: 'Tú',
-                    duration: '1:30',
-                    icon: Icons.mic,
-                    color: catColor,
+                onPressed: () async {
+                  if (communityId == null || transcription.trim().isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Faltan datos para guardar la memoria'),
+                      ),
+                    );
+                    return;
+                  }
+
+                  final notifier = ref.read(memoryProvider.notifier);
+                  final memory = await notifier.createStory(
+                    categoryId: _categoryId(category),
+                    communityId: communityId,
+                    title: title,
+                    contentText: transcription,
                   );
-                  ref.read(memoryProvider.notifier).addMemory(memory);
+
+                  if (!context.mounted) return;
+
+                  if (memory == null) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          notifier.errorMessage ??
+                              'No se pudo guardar la memoria',
+                        ),
+                      ),
+                    );
+                    return;
+                  }
+
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
-                      content: Text('Memoria guardada en el corpus comunitario'),
+                      content: Text(
+                        'Memoria guardada en el corpus comunitario',
+                      ),
                     ),
                   );
                   context.pop();
@@ -231,10 +249,7 @@ class RecordingPreviewPage extends ConsumerWidget {
                 onPressed: () => context.pop(),
                 child: Text(
                   'Descartar',
-                  style: TextStyle(
-                    color: context.textSecondary,
-                    fontSize: 14,
-                  ),
+                  style: TextStyle(color: context.textSecondary, fontSize: 14),
                 ),
               ),
             ),
@@ -267,5 +282,18 @@ class RecordingPreviewPage extends ConsumerWidget {
         ],
       ),
     );
+  }
+
+  int _categoryId(String category) {
+    switch (category.toLowerCase()) {
+      case 'leyenda':
+        return 1;
+      case 'fiesta':
+        return 2;
+      case 'ritual':
+        return 3;
+      default:
+        return 1;
+    }
   }
 }

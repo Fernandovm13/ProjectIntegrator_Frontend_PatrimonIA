@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+
+import '../../../../core/models/memory.dart';
 import '../../../../shared/theme/app_colors.dart';
 import '../../../../shared/theme/theme_colors_extension.dart';
-import '../../../../core/models/memory.dart';
-import '../../../explore/presentation/providers/memory_provider.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../../explore/presentation/providers/memory_provider.dart';
 
 class UserProfilePage extends ConsumerWidget {
   const UserProfilePage({super.key});
@@ -23,7 +24,7 @@ class UserProfilePage extends ConsumerWidget {
           children: [
             Container(
               width: double.infinity,
-              height: 200,
+              height: 210,
               decoration: const BoxDecoration(
                 gradient: LinearGradient(
                   colors: [AppColors.headerStart, AppColors.headerEnd],
@@ -64,34 +65,29 @@ class UserProfilePage extends ConsumerWidget {
                     ),
                   ),
                   const SizedBox(height: 4),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 3,
-                    ),
-                    decoration: BoxDecoration(
-                      color: context.maizeGold,
-                      borderRadius: BorderRadius.circular(99),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(Icons.auto_awesome, size: 10, color: Colors.white),
-                        const SizedBox(width: 4),
-                        Text(
-                          user?.role ?? 'Explorador',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                          ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      _buildHeaderChip(
+                        context,
+                        Icons.auto_awesome,
+                        user?.role ?? 'Explorador',
+                        context.maizeGold,
+                      ),
+                      if (user?.isPremium == true) ...[
+                        const SizedBox(width: 6),
+                        _buildHeaderChip(
+                          context,
+                          Icons.workspace_premium,
+                          'Premium',
+                          context.sacredJade,
                         ),
                       ],
-                    ),
+                    ],
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 6),
                   Text(
-                    user?.location != null ? '📍 ${user!.location}' : '',
+                    user?.email ?? '',
                     style: const TextStyle(color: Colors.white70, fontSize: 12),
                   ),
                 ],
@@ -106,11 +102,23 @@ class UserProfilePage extends ConsumerWidget {
                 children: [
                   Row(
                     children: [
-                      _buildStatCard(context, '${user?.storiesSaved ?? 0}', 'Historias guardadas'),
+                      _buildStatCard(
+                        context,
+                        '${user?.storiesSaved ?? 0}',
+                        'Historias guardadas',
+                      ),
                       const SizedBox(width: 12),
-                      _buildStatCard(context, '${user?.storiesRead ?? 0}', 'Historias leídas'),
+                      _buildStatCard(
+                        context,
+                        '${user?.storiesRead ?? 0}',
+                        'Historias leidas',
+                      ),
                       const SizedBox(width: 12),
-                      _buildStatCard(context, '${user?.communities ?? 0}', 'Comunidades'),
+                      _buildStatCard(
+                        context,
+                        '${user?.reputationScore ?? 0}',
+                        'Reputacion',
+                      ),
                     ],
                   ),
                   const SizedBox(height: 28),
@@ -137,11 +145,10 @@ class UserProfilePage extends ConsumerWidget {
                     ],
                   ),
                   const SizedBox(height: 12),
-                  for (final memory in memories)
-                    _buildMemoryItem(context, memory, ref),
+                  for (final memory in memories) _buildMemoryItem(context, memory, ref),
                   const SizedBox(height: 24),
                   Text(
-                    'Configuración',
+                    'Configuracion',
                     style: TextStyle(
                       fontFamily: 'Playfair Display',
                       fontWeight: FontWeight.bold,
@@ -151,12 +158,46 @@ class UserProfilePage extends ConsumerWidget {
                   ),
                   const SizedBox(height: 16),
                   InkWell(
+                    onTap: authState.isLoading
+                        ? null
+                        : () => ref.read(authProvider.notifier).fetchProfile(),
+                    child: Row(
+                      children: [
+                        Icon(Icons.refresh, color: context.sacredJade, size: 20),
+                        const SizedBox(width: 12),
+                        Text(
+                          authState.isLoading
+                              ? 'Actualizando perfil...'
+                              : 'Actualizar perfil',
+                          style: TextStyle(
+                            color: context.sacredJade,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (authState.errorMessage != null) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      authState.errorMessage!,
+                      style: const TextStyle(color: Colors.red, fontSize: 12),
+                    ),
+                  ],
+                  const SizedBox(height: 16),
+                  InkWell(
                     onTap: () => ref.read(authProvider.notifier).logout(),
                     child: Row(
                       children: [
                         Icon(Icons.logout, color: context.warmAmber, size: 20),
                         const SizedBox(width: 12),
-                        Text('Cerrar sesión', style: TextStyle(color: context.warmAmber, fontWeight: FontWeight.w500)),
+                        Text(
+                          'Cerrar sesion',
+                          style: TextStyle(
+                            color: context.warmAmber,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -165,6 +206,36 @@ class UserProfilePage extends ConsumerWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildHeaderChip(
+    BuildContext context,
+    IconData icon,
+    String label,
+    Color color,
+  ) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(99),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 10, color: Colors.white),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
       ),
     );
   }

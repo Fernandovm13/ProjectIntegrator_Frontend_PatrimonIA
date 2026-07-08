@@ -43,12 +43,14 @@ class DetailPage extends ConsumerWidget {
                   Row(
                     children: [
                       IconButton(
-                        icon: const Icon(
-                          Icons.electric_bolt,
+                        icon: Icon(
+                          memory.isFavorite
+                              ? Icons.favorite
+                              : Icons.favorite_border,
                           color: Colors.white,
                         ),
-                        onPressed: () {
-                          ref.read(memoryProvider.notifier).toggleLike(memory.id);
+                        onPressed: () async {
+                          await ref.read(memoryProvider.notifier).toggleLike(memory.id);
                         },
                       ),
                       IconButton(

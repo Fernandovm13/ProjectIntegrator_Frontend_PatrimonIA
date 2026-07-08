@@ -24,11 +24,8 @@ class _RecordMemoryPageState extends State<RecordMemoryPage> {
 
   final List<_CategoryInfo> _categories = [
     const _CategoryInfo('Leyenda', Icons.eco, AppColors.categoryLeyenda),
-    const _CategoryInfo('Historia', Icons.account_balance, AppColors.categoryHistoria),
+    const _CategoryInfo('Fiesta', Icons.celebration, AppColors.categoryTradicion),
     const _CategoryInfo('Ritual', Icons.auto_awesome, AppColors.categoryRitual),
-    const _CategoryInfo('Canción', Icons.library_music, AppColors.categoryCancion),
-    const _CategoryInfo('Personaje', Icons.person, AppColors.categoryPersonaje),
-    const _CategoryInfo('Tradición', Icons.agriculture, AppColors.categoryTradicion),
   ];
 
   @override

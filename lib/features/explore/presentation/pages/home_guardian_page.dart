@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/models/memory.dart';
 import '../../../../shared/theme/theme_colors_extension.dart';
 import '../../../../shared/widgets/category_chip.dart';
+import '../../../auth/presentation/providers/auth_provider.dart';
 import '../providers/memory_provider.dart';
 
 class HomeGuardianPage extends ConsumerStatefulWidget {
@@ -16,23 +17,26 @@ class HomeGuardianPage extends ConsumerStatefulWidget {
 class _HomeGuardianPageState extends ConsumerState<HomeGuardianPage> {
   String _selectedCategory = 'Leyendas';
 
-  static const Map<String, String> _categoryMap = {
-    'Leyendas': 'Leyenda',
-    'Tradiciones': 'Tradición',
-    'Rituales': 'Ritual',
-  };
-
   @override
   Widget build(BuildContext context) {
     final memories = ref.watch(memoryProvider);
+    final user = ref.watch(authProvider).user;
+    final categories = [
+      ...{for (final memory in memories) memory.category},
+    ];
+    if (categories.isNotEmpty && !categories.contains(_selectedCategory)) {
+      _selectedCategory = categories.first;
+    }
 
-    final categoryFilter = _categoryMap[_selectedCategory]!;
+    final categoryFilter = _selectedCategory;
 
     List<Memory> displayMemories;
-    if (categoryFilter == 'Todos') {
+    if (categoryFilter == 'Todos' || categories.isEmpty) {
       displayMemories = List.from(memories);
     } else {
-      displayMemories = memories.where((m) => m.category == categoryFilter).toList();
+      displayMemories = memories
+          .where((m) => m.category == categoryFilter)
+          .toList();
     }
     displayMemories.sort((a, b) => b.createdAt.compareTo(a.createdAt));
 
@@ -87,9 +91,9 @@ class _HomeGuardianPageState extends ConsumerState<HomeGuardianPage> {
                       CircleAvatar(
                         radius: 16,
                         backgroundColor: context.sacredJade,
-                        child: const Text(
-                          'F',
-                          style: TextStyle(
+                        child: Text(
+                          _userInitial(user?.name),
+                          style: const TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.bold,
                             fontSize: 12,
@@ -157,9 +161,7 @@ class _HomeGuardianPageState extends ConsumerState<HomeGuardianPage> {
                             child: OutlinedButton.icon(
                               style: OutlinedButton.styleFrom(
                                 foregroundColor: context.textPrimary,
-                                side: BorderSide(
-                                  color: context.textBody,
-                                ),
+                                side: BorderSide(color: context.textBody),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(8),
                                 ),
@@ -209,15 +211,16 @@ class _HomeGuardianPageState extends ConsumerState<HomeGuardianPage> {
                 scrollDirection: Axis.horizontal,
                 child: Row(
                   children: [
-                    for (final entry in _categoryMap.entries)
+                    for (final entry in categories)
                       Padding(
                         padding: EdgeInsets.only(
-                          right: entry.key != _categoryMap.entries.last.key ? 8 : 0,
+                          right: entry != categories.last ? 8 : 0,
                         ),
                         child: CategoryChip(
-                          label: entry.key,
-                          isSelected: _selectedCategory == entry.key,
-                          onTap: () => setState(() => _selectedCategory = entry.key),
+                          label: entry,
+                          isSelected: _selectedCategory == entry,
+                          onTap: () =>
+                              setState(() => _selectedCategory = entry),
                         ),
                       ),
                   ],
@@ -261,6 +264,12 @@ class _HomeGuardianPageState extends ConsumerState<HomeGuardianPage> {
         ),
       ),
     );
+  }
+
+  String _userInitial(String? name) {
+    final trimmed = name?.trim();
+    if (trimmed == null || trimmed.isEmpty) return 'U';
+    return trimmed[0].toUpperCase();
   }
 
   Widget _buildMemoryCard(BuildContext context, Memory memory) {
@@ -337,10 +346,7 @@ class _HomeGuardianPageState extends ConsumerState<HomeGuardianPage> {
               children: [
                 Text(
                   memory.duration,
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: context.textSecondary,
-                  ),
+                  style: TextStyle(fontSize: 11, color: context.textSecondary),
                 ),
                 const SizedBox(height: 4),
                 const Icon(

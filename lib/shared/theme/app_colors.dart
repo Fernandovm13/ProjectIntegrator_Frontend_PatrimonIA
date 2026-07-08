@@ -30,6 +30,8 @@ class AppColors {
         return categoryLeyenda;
       case 'tradición':
       case 'tradicion':
+      case 'fiesta':
+      case 'fiestas':
         return categoryTradicion;
       case 'historia':
         return categoryHistoria;

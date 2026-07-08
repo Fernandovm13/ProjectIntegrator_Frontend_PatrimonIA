@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+
 import '../../../../core/models/memory.dart';
 import '../../../../shared/theme/app_colors.dart';
 import '../../../../shared/theme/theme_colors_extension.dart';
 import '../../../../shared/widgets/category_chip.dart';
-import '../providers/memory_provider.dart';
+import '../../../auth/presentation/providers/auth_provider.dart';
 import '../providers/community_provider.dart';
+import '../providers/memory_provider.dart';
 
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
@@ -18,31 +20,29 @@ class HomePage extends ConsumerStatefulWidget {
 class _HomePageState extends ConsumerState<HomePage> {
   String _selectedCategory = 'Todos';
 
-  static const Map<String, String> _categoryMap = {
-    'Todos': 'Todos',
-    'Leyendas': 'Leyenda',
-    'Tradiciones': 'Tradición',
-    'Rituales': 'Ritual',
-    'Historia': 'Historia',
-    'Canciones': 'Canción',
-  };
-
   @override
   Widget build(BuildContext context) {
     final memories = ref.watch(memoryProvider);
     final community = ref.watch(communityProvider);
+    final user = ref.watch(authProvider).user;
+    final categories = [
+      'Todos',
+      ...{for (final memory in memories) memory.category},
+    ];
+
+    if (!categories.contains(_selectedCategory)) {
+      _selectedCategory = 'Todos';
+    }
 
     final featuredMemories = memories.where((m) => m.isFeatured).toList();
-    final featuredMemory = featuredMemories.isNotEmpty ? featuredMemories.first : null;
-
-    final categoryFilter = _categoryMap[_selectedCategory]!;
-
-    List<Memory> displayMemories;
-    if (categoryFilter == 'Todos') {
-      displayMemories = List.from(memories);
-    } else {
-      displayMemories = memories.where((m) => m.category == categoryFilter).toList();
-    }
+    final featuredMemory = featuredMemories.isNotEmpty
+        ? featuredMemories.first
+        : memories.isNotEmpty
+        ? memories.first
+        : null;
+    final displayMemories = _selectedCategory == 'Todos'
+        ? List<Memory>.from(memories)
+        : memories.where((m) => m.category == _selectedCategory).toList();
     displayMemories.sort((a, b) => b.createdAt.compareTo(a.createdAt));
 
     return Scaffold(
@@ -74,7 +74,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                         ),
                         const SizedBox(width: 6),
                         Text(
-                          community.selected?.name ?? 'San Cristóbal de las Casas',
+                          community.selected?.name ?? 'Comunidad',
                           style: TextStyle(
                             color: context.textPrimary,
                             fontSize: 12,
@@ -96,9 +96,9 @@ class _HomePageState extends ConsumerState<HomePage> {
                       CircleAvatar(
                         radius: 16,
                         backgroundColor: context.sacredJade,
-                        child: const Text(
-                          'M',
-                          style: TextStyle(
+                        child: Text(
+                          _userInitial(user?.name),
+                          style: const TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.bold,
                             fontSize: 12,
@@ -169,7 +169,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                       ),
                       const SizedBox(height: 16),
                       Text(
-                        featuredMemory?.title ?? 'El Nagual del Cerro Tzontehuitz',
+                        featuredMemory?.title ?? 'Sin historias disponibles',
                         style: const TextStyle(
                           fontFamily: 'Playfair Display',
                           fontWeight: FontWeight.bold,
@@ -190,7 +190,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                               ),
                               const SizedBox(width: 4),
                               Text(
-                                featuredMemory?.duration ?? '3 min lectura',
+                                featuredMemory?.duration ?? '0 min',
                                 style: const TextStyle(
                                   color: Colors.white70,
                                   fontSize: 13,
@@ -210,87 +210,63 @@ class _HomePageState extends ConsumerState<HomePage> {
                 ),
               ),
               const SizedBox(height: 28),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Explorar por tema',
-                    style: TextStyle(
-                      fontFamily: 'Playfair Display',
-                      fontWeight: FontWeight.bold,
-                      fontSize: 18,
-                      color: context.textPrimary,
-                    ),
-                  ),
-                  GestureDetector(
-                    onTap: () {},
-                    child: Text(
-                      'Ver todo',
-                      style: TextStyle(
-                        color: context.sacredJade,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 13,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+              _sectionHeader(context, 'Explorar por tema'),
               const SizedBox(height: 12),
               SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 child: Row(
                   children: [
-                    for (final entry in _categoryMap.entries)
+                    for (final category in categories)
                       Padding(
                         padding: EdgeInsets.only(
-                          right: entry.key != _categoryMap.entries.last.key ? 8 : 0,
+                          right: category != categories.last ? 8 : 0,
                         ),
                         child: CategoryChip(
-                          label: entry.key,
-                          isSelected: _selectedCategory == entry.key,
-                          onTap: () => setState(() => _selectedCategory = entry.key),
+                          label: category,
+                          isSelected: _selectedCategory == category,
+                          onTap: () =>
+                              setState(() => _selectedCategory = category),
                         ),
                       ),
                   ],
                 ),
               ),
               const SizedBox(height: 24),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Memorias recientes',
-                    style: TextStyle(
-                      fontFamily: 'Playfair Display',
-                      fontWeight: FontWeight.bold,
-                      fontSize: 18,
-                      color: context.textPrimary,
-                    ),
-                  ),
-                  GestureDetector(
-                    onTap: () {},
-                    child: Text(
-                      'Ver todo',
-                      style: TextStyle(
-                        color: context.sacredJade,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 13,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+              _sectionHeader(context, 'Memorias recientes'),
               const SizedBox(height: 12),
-              ...displayMemories.map(
-                (memory) => Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: _buildMemoryCard(context, memory),
+              if (displayMemories.isEmpty)
+                Text(
+                  'No hay memorias disponibles.',
+                  style: TextStyle(color: context.textSecondary, fontSize: 13),
+                )
+              else
+                ...displayMemories.map(
+                  (memory) => Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: _buildMemoryCard(context, memory),
+                  ),
                 ),
-              ),
             ],
           ),
         ),
       ),
+    );
+  }
+
+  Widget _sectionHeader(BuildContext context, String title) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          title,
+          style: TextStyle(
+            fontFamily: 'Playfair Display',
+            fontWeight: FontWeight.bold,
+            fontSize: 18,
+            color: context.textPrimary,
+          ),
+        ),
+      ],
     );
   }
 
@@ -352,11 +328,14 @@ class _HomePageState extends ConsumerState<HomePage> {
                         color: context.textSecondary,
                       ),
                       const SizedBox(width: 2),
-                      Text(
-                        memory.location,
-                        style: TextStyle(
-                          fontSize: 10,
-                          color: context.textSecondary,
+                      Flexible(
+                        child: Text(
+                          memory.location,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: context.textSecondary,
+                          ),
                         ),
                       ),
                     ],
@@ -368,10 +347,7 @@ class _HomePageState extends ConsumerState<HomePage> {
               children: [
                 Text(
                   memory.duration,
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: context.textSecondary,
-                  ),
+                  style: TextStyle(fontSize: 11, color: context.textSecondary),
                 ),
                 const SizedBox(height: 4),
                 const Icon(
@@ -385,5 +361,11 @@ class _HomePageState extends ConsumerState<HomePage> {
         ),
       ),
     );
+  }
+
+  String _userInitial(String? name) {
+    final trimmed = name?.trim();
+    if (trimmed == null || trimmed.isEmpty) return 'U';
+    return trimmed[0].toUpperCase();
   }
 }

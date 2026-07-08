@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+
+import '../../../../core/models/memory.dart';
 import '../../../../shared/theme/theme_colors_extension.dart';
 import '../../../../shared/widgets/category_chip.dart';
-import '../../../../core/models/memory.dart';
 import '../../../explore/presentation/providers/memory_provider.dart';
 
 class SearchPage extends ConsumerStatefulWidget {
@@ -19,14 +20,6 @@ class _SearchPageState extends ConsumerState<SearchPage> {
   bool _hasSubmitted = false;
   List<Memory> _searchResults = [];
   List<String> _recentSearches = [];
-
-  final List<String> _filters = [
-    'Todos',
-    'Leyendas',
-    'Historia',
-    'Rituales',
-    'Música',
-  ];
 
   @override
   void dispose() {
@@ -52,19 +45,20 @@ class _SearchPageState extends ConsumerState<SearchPage> {
 
   List<Memory> _filteredResults() {
     if (_activeFilter == 'Todos') return _searchResults;
-    final categoryMap = {
-      'Leyendas': 'Leyenda',
-      'Historia': 'Historia',
-      'Rituales': 'Ritual',
-      'Música': 'Canción',
-    };
-    final target = categoryMap[_activeFilter];
-    if (target == null) return _searchResults;
-    return _searchResults.where((m) => m.category == target).toList();
+    return _searchResults.where((m) => m.category == _activeFilter).toList();
   }
 
   @override
   Widget build(BuildContext context) {
+    final memories = ref.watch(memoryProvider);
+    final filters = [
+      'Todos',
+      ...{for (final memory in memories) memory.category},
+    ];
+    if (!filters.contains(_activeFilter)) {
+      _activeFilter = 'Todos';
+    }
+
     return Scaffold(
       backgroundColor: context.surface,
       body: SafeArea(
@@ -82,9 +76,9 @@ class _SearchPageState extends ConsumerState<SearchPage> {
                   controller: _searchController,
                   style: TextStyle(color: context.textPrimary),
                   textInputAction: TextInputAction.search,
-                  onSubmitted: (value) => _performSearch(value),
+                  onSubmitted: _performSearch,
                   decoration: InputDecoration(
-                    hintText: 'Busca leyendas, rituales, personajes...',
+                    hintText: 'Busca memorias comunitarias...',
                     hintStyle: TextStyle(color: context.textSecondary),
                     prefixIcon: IconButton(
                       icon: Icon(Icons.search, color: context.textSecondary),
@@ -116,23 +110,26 @@ class _SearchPageState extends ConsumerState<SearchPage> {
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Row(
-                children: _filters.map((filter) {
-                  return Padding(
-                    padding: const EdgeInsets.only(right: 8),
-                    child: CategoryChip(
-                      label: filter,
-                      isSelected: _activeFilter == filter,
-                      onTap: () => setState(() => _activeFilter = filter),
+                children: [
+                  for (final filter in filters)
+                    Padding(
+                      padding: EdgeInsets.only(
+                        right: filter != filters.last ? 8 : 0,
+                      ),
+                      child: CategoryChip(
+                        label: filter,
+                        isSelected: _activeFilter == filter,
+                        onTap: () => setState(() => _activeFilter = filter),
+                      ),
                     ),
-                  );
-                }).toList(),
+                ],
               ),
             ),
             const SizedBox(height: 20),
             Expanded(
               child: _hasSubmitted
                   ? _buildResultsView(context)
-                  : _buildLandingView(context),
+                  : _buildLandingView(context, memories),
             ),
           ],
         ),
@@ -140,13 +137,13 @@ class _SearchPageState extends ConsumerState<SearchPage> {
     );
   }
 
-  Widget _buildLandingView(BuildContext context) {
-    final memories = ref.watch(memoryProvider);
+  Widget _buildLandingView(BuildContext context, List<Memory> memories) {
+    final popularTopics = _popularTopics(memories);
     return ListView(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       children: [
         Text(
-          'Búsquedas recientes',
+          'Busquedas recientes',
           style: TextStyle(
             fontFamily: 'Playfair Display',
             fontWeight: FontWeight.bold,
@@ -155,16 +152,16 @@ class _SearchPageState extends ConsumerState<SearchPage> {
           ),
         ),
         const SizedBox(height: 8),
-        if (_recentSearches.isEmpty) ...[
-          _buildRecentSearch(context, 'nagual'),
-          _buildRecentSearch(context, 'danza de los parachicos'),
-          _buildRecentSearch(context, 'tejidos tzotzil'),
-        ] else
-          for (final term in _recentSearches)
-            _buildRecentSearch(context, term),
+        if (_recentSearches.isEmpty)
+          Text(
+            'Aun no has buscado memorias.',
+            style: TextStyle(color: context.textSecondary, fontSize: 13),
+          )
+        else
+          for (final term in _recentSearches) _buildRecentSearch(context, term),
         const SizedBox(height: 24),
         Text(
-          'Temas populares en tu comunidad',
+          'Temas disponibles',
           style: TextStyle(
             fontFamily: 'Playfair Display',
             fontWeight: FontWeight.bold,
@@ -173,47 +170,29 @@ class _SearchPageState extends ConsumerState<SearchPage> {
           ),
         ),
         const SizedBox(height: 12),
-        GridView.count(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          crossAxisCount: 2,
-          mainAxisSpacing: 12,
-          crossAxisSpacing: 12,
-          childAspectRatio: 1.3,
-          children: [
-            _buildTopicCard(context, Icons.eco, 'Naguales', '${memories.length} memorias'),
-            _buildTopicCard(
-              context,
-              Icons.eco,
-              'Medicina ancestral',
-              '${memories.where((m) => m.category == 'Tradición').length} memorias',
-            ),
-            _buildTopicCard(
-              context,
-              Icons.auto_awesome,
-              'Rituales de curación',
-              '${memories.where((m) => m.category == 'Ritual').length} memorias',
-            ),
-            _buildTopicCard(
-              context,
-              Icons.agriculture,
-              'Milpa sagrada',
-              '${memories.where((m) => m.category == 'Tradición').length} memorias',
-            ),
-            _buildTopicCard(
-              context,
-              Icons.terrain,
-              'Cerros sagrados',
-              '${memories.where((m) => m.category == 'Leyenda').length} memorias',
-            ),
-            _buildTopicCard(
-              context,
-              Icons.palette,
-              'Tejidos de Zinacantán',
-              '${memories.where((m) => m.location.contains('Zinacantán')).length} memorias',
-            ),
-          ],
-        ),
+        if (popularTopics.isEmpty)
+          Text(
+            'No hay temas disponibles.',
+            style: TextStyle(color: context.textSecondary, fontSize: 13),
+          )
+        else
+          GridView.count(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            crossAxisCount: 2,
+            mainAxisSpacing: 12,
+            crossAxisSpacing: 12,
+            childAspectRatio: 1.3,
+            children: [
+              for (final topic in popularTopics)
+                _buildTopicCard(
+                  context,
+                  topic.icon,
+                  topic.name,
+                  '${topic.count} memorias',
+                ),
+            ],
+          ),
       ],
     );
   }
@@ -229,17 +208,12 @@ class _SearchPageState extends ConsumerState<SearchPage> {
         },
         child: Text(
           term,
-          style: TextStyle(
-            color: context.textBody,
-            fontSize: 14,
-          ),
+          style: TextStyle(color: context.textBody, fontSize: 14),
         ),
       ),
       trailing: IconButton(
         icon: Icon(Icons.close, color: context.textSecondary, size: 18),
-        onPressed: () {
-          setState(() => _recentSearches.remove(term));
-        },
+        onPressed: () => setState(() => _recentSearches.remove(term)),
       ),
     );
   }
@@ -272,10 +246,7 @@ class _SearchPageState extends ConsumerState<SearchPage> {
             ),
           ),
           const SizedBox(height: 4),
-          Text(
-            count,
-            style: TextStyle(fontSize: 11, color: context.maizeGold),
-          ),
+          Text(count, style: TextStyle(fontSize: 11, color: context.maizeGold)),
         ],
       ),
     );
@@ -296,34 +267,6 @@ class _SearchPageState extends ConsumerState<SearchPage> {
             padding: const EdgeInsets.only(bottom: 8),
             child: _buildResultCard(context, memory),
           ),
-        const SizedBox(height: 24),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              '← Anterior',
-              style: TextStyle(
-                color: context.sacredJade,
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            const SizedBox(width: 16),
-            Text(
-              '1/${results.length}',
-              style: TextStyle(color: context.textSecondary, fontSize: 13),
-            ),
-            const SizedBox(width: 16),
-            Text(
-              'Siguiente →',
-              style: TextStyle(
-                color: context.sacredJade,
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ],
-        ),
         const SizedBox(height: 20),
       ],
     );
@@ -370,23 +313,28 @@ class _SearchPageState extends ConsumerState<SearchPage> {
                     ],
                   ),
                 ),
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.location_on,
-                      size: 10,
-                      color: context.textSecondary,
-                    ),
-                    const SizedBox(width: 2),
-                    Text(
-                      memory.location,
-                      style: TextStyle(
-                        fontSize: 10,
+                Flexible(
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.location_on,
+                        size: 10,
                         color: context.textSecondary,
                       ),
-                    ),
-                  ],
+                      const SizedBox(width: 2),
+                      Flexible(
+                        child: Text(
+                          memory.location,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: context.textSecondary,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -415,4 +363,27 @@ class _SearchPageState extends ConsumerState<SearchPage> {
       ),
     );
   }
+
+  List<_Topic> _popularTopics(List<Memory> memories) {
+    final grouped = <String, _Topic>{};
+    for (final memory in memories) {
+      final current = grouped[memory.category];
+      grouped[memory.category] = _Topic(
+        name: memory.category,
+        icon: memory.icon,
+        count: (current?.count ?? 0) + 1,
+      );
+    }
+    final topics = grouped.values.toList();
+    topics.sort((a, b) => b.count.compareTo(a.count));
+    return topics.take(6).toList();
+  }
+}
+
+class _Topic {
+  final String name;
+  final IconData icon;
+  final int count;
+
+  const _Topic({required this.name, required this.icon, required this.count});
 }

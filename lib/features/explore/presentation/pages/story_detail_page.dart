@@ -43,12 +43,14 @@ class StoryDetailPage extends ConsumerWidget {
                   Row(
                     children: [
                       IconButton(
-                        icon: const Icon(
-                          Icons.bookmark_border,
+                        icon: Icon(
+                          memory.isFavorite
+                              ? Icons.bookmark
+                              : Icons.bookmark_border,
                           color: Colors.white,
                         ),
-                        onPressed: () {
-                          ref.read(memoryProvider.notifier).toggleLike(memory.id);
+                        onPressed: () async {
+                          await ref.read(memoryProvider.notifier).toggleLike(memory.id);
                         },
                       ),
                       IconButton(
