@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import '../../../../shared/theme/theme_colors_extension.dart';
 
 class SplashPage extends StatefulWidget {
   const SplashPage({super.key});
@@ -21,80 +20,131 @@ class _SplashPageState extends State<SplashPage> {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
+
     return Scaffold(
-      backgroundColor: context.surface,
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              height: 100,
-              width: 100,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: context.card,
-                boxShadow: [
-                  BoxShadow(
-                    color: context.maizeGold.withValues(alpha: 0.3),
-                    blurRadius: 30,
-                    spreadRadius: 8,
+      backgroundColor: cs.scrim,
+      body: Stack(
+        children: [
+          _buildParticles(context),
+          Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                _buildGlowLogo(context),
+                const SizedBox(height: 32),
+                Text(
+                  'PatrimonIA',
+                  style: tt.displaySmall?.copyWith(
+                    fontFamily: 'Playfair Display',
+                    fontWeight: FontWeight.bold,
+                    color: cs.surface,
                   ),
-                ],
-              ),
-              child: Icon(
-                Icons.circle_outlined,
-                size: 50,
-                color: context.maizeGold,
-              ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  '♦ ♦ ♦ ♦ ♦ ♦ ♦ ♦ ♦ ♦',
+                  style: TextStyle(
+                    color: cs.tertiary.withValues(alpha: 0.4),
+                    fontSize: 10,
+                    letterSpacing: 4,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'La memoria viva de tu comunidad',
+                  style: tt.titleMedium?.copyWith(
+                    fontStyle: FontStyle.italic,
+                    color: cs.surface.withValues(alpha: 0.8),
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 24),
-            Text(
-              'PatrimonIA',
-              style: TextStyle(
-                fontFamily: 'Playfair Display',
-                fontWeight: FontWeight.bold,
-                fontSize: 32,
-                color: context.textPrimary,
-              ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildParticles(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final size = MediaQuery.of(context).size;
+
+    final particles = <_ParticleData>[
+      _ParticleData(top: 0.05, left: 0.08, size: 3, color: cs.primary),
+      _ParticleData(top: 0.10, left: 0.75, size: 4, color: cs.tertiary),
+      _ParticleData(top: 0.18, left: 0.25, size: 2, color: cs.onPrimary.withValues(alpha: 0.3)),
+      _ParticleData(top: 0.25, left: 0.65, size: 5, color: cs.primary),
+      _ParticleData(top: 0.33, left: 0.12, size: 3, color: cs.tertiary),
+      _ParticleData(top: 0.40, left: 0.82, size: 2, color: cs.onPrimary.withValues(alpha: 0.3)),
+      _ParticleData(top: 0.48, left: 0.35, size: 4, color: cs.primary),
+      _ParticleData(top: 0.55, left: 0.88, size: 3, color: cs.tertiary),
+      _ParticleData(top: 0.62, left: 0.04, size: 5, color: cs.onPrimary.withValues(alpha: 0.3)),
+      _ParticleData(top: 0.70, left: 0.55, size: 2, color: cs.primary),
+      _ParticleData(top: 0.78, left: 0.18, size: 4, color: cs.tertiary),
+      _ParticleData(top: 0.85, left: 0.72, size: 3, color: cs.onPrimary.withValues(alpha: 0.3)),
+      _ParticleData(top: 0.93, left: 0.42, size: 5, color: cs.primary),
+    ];
+
+    return Stack(
+      children: particles.map((p) {
+        return Positioned(
+          top: size.height * p.top,
+          left: size.width * p.left,
+          child: Container(
+            width: p.size,
+            height: p.size,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: p.color,
             ),
-            const SizedBox(height: 12),
-            const _GoldDotSeparator(),
-            const SizedBox(height: 12),
-            Text(
-              'La memoria viva de tu comunidad',
-              style: TextStyle(
-                fontFamily: 'Playfair Display',
-                fontStyle: FontStyle.italic,
-                fontSize: 14,
-                color: context.textSecondary,
-              ),
-            ),
-          ],
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  Widget _buildGlowLogo(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
+    return Container(
+      width: 100,
+      height: 100,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: cs.surfaceContainerHighest.withValues(alpha: 0.5),
+        border: Border.all(
+          color: cs.tertiary.withValues(alpha: 0.3),
+          width: 1,
         ),
+        boxShadow: [
+          BoxShadow(
+            color: cs.tertiary.withValues(alpha: 0.5),
+            blurRadius: 50,
+            spreadRadius: 10,
+          ),
+        ],
+      ),
+      child: Icon(
+        Icons.auto_awesome,
+        color: cs.tertiary,
+        size: 40,
       ),
     );
   }
 }
 
-class _GoldDotSeparator extends StatelessWidget {
-  const _GoldDotSeparator();
+class _ParticleData {
+  final double top;
+  final double left;
+  final double size;
+  final Color color;
 
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: List.generate(
-        20,
-        (index) => Container(
-          margin: const EdgeInsets.symmetric(horizontal: 2),
-          width: 3,
-          height: 3,
-          decoration: BoxDecoration(
-            color: context.maizeGold,
-            shape: BoxShape.circle,
-          ),
-        ),
-      ),
-    );
-  }
+  const _ParticleData({
+    required this.top,
+    required this.left,
+    required this.size,
+    required this.color,
+  });
 }

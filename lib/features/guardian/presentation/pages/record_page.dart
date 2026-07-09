@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import '../../../../shared/theme/app_colors.dart';
-import '../../../../shared/theme/theme_colors_extension.dart';
+import '../../../../shared/theme/material_theme.dart';
 
 class RecordMemoryPage extends StatefulWidget {
   const RecordMemoryPage({super.key});
@@ -40,7 +39,10 @@ class _RecordMemoryPageState extends State<RecordMemoryPage> {
         elevation: 0,
         leading: IconButton(
           icon: Icon(Icons.arrow_back, color: context.textPrimary),
-          onPressed: () => context.pop(),
+          onPressed: () => setState(() {
+            _selectedStoryType = null;
+            _selectedCategory = null;
+          }),
         ),
         title: Text(
           'Guardar una Memoria',
@@ -159,7 +161,10 @@ class _RecordMemoryPageState extends State<RecordMemoryPage> {
                   _buildInactiveWaveform(context),
                   const SizedBox(height: 12),
                   GestureDetector(
-                    onTap: () => context.pop(),
+                    onTap: () => setState(() {
+                      _selectedStoryType = null;
+                      _selectedCategory = null;
+                    }),
                     child: Text(
                       'Cancelar',
                       style: TextStyle(

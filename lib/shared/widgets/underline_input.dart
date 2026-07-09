@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import '../theme/app_colors.dart';
-import '../theme/theme_colors_extension.dart';
+import '../theme/material_theme.dart';
 
 class UnderlineInput extends StatelessWidget {
   final String hint;

@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../../../shared/theme/app_colors.dart';
-import '../../../../shared/theme/theme_colors_extension.dart';
+import '../../../../shared/theme/material_theme.dart';
 import '../../../../shared/widgets/primary_button.dart';
 import '../../../../shared/widgets/underline_input.dart';
 import '../providers/auth_provider.dart';

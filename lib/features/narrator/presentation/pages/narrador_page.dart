@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../../shared/theme/app_colors.dart';
-import '../../../../shared/theme/theme_colors_extension.dart';
+import '../../../../shared/theme/material_theme.dart';
 
 class _ChatMessage {
   final String text;

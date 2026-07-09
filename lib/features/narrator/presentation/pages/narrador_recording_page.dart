@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../../shared/theme/app_colors.dart';
-import '../../../../shared/theme/theme_colors_extension.dart';
+import '../../../../shared/theme/material_theme.dart';
 import '../../../../shared/widgets/waveform_widget.dart';
 
 class NarradorRecordingPage extends StatelessWidget {

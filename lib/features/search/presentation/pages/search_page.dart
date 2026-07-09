@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../../../shared/theme/theme_colors_extension.dart';
+import '../../../../shared/theme/material_theme.dart';
 import '../../../../shared/widgets/category_chip.dart';
 import '../../../../core/models/memory.dart';
 import '../../../explore/presentation/providers/memory_provider.dart';

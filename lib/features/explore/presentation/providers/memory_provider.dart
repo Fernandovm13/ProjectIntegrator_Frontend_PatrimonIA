@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/models/memory.dart';
-import '../../../../shared/theme/app_colors.dart';
+import '../../../../shared/theme/material_theme.dart';
 
 List<Memory> _seedMemories() {
   return [

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../theme/app_colors.dart';
+import '../theme/material_theme.dart';
 
 class CategoryBadge extends StatelessWidget {
   final String category;
