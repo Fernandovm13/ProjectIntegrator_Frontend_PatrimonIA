@@ -10,6 +10,7 @@ import 'package:patrimonia/features/auth/presentation/providers/auth_provider.da
 import 'package:patrimonia/features/explore/presentation/providers/community_provider.dart';
 import 'package:patrimonia/features/explore/presentation/providers/memory_provider.dart';
 import 'package:patrimonia/features/explore/presentation/providers/notification_provider.dart';
+import 'package:patrimonia/features/guardian/presentation/providers/story_category_provider.dart';
 
 void main() {
   const baseUrl = 'http://10.0.2.2:8080/api';
@@ -190,6 +191,69 @@ void main() {
       expect(state.communities.single.name, 'Suchiapa');
       expect(state.selected?.name, 'Suchiapa');
       expect(state.communities.single.memoryCount, 4);
+    },
+  );
+
+  test('story categories are loaded dynamically from backend', () async {
+    final container = _containerWithClient((request) async {
+      expect(request.url.toString(), '$baseUrl/categories');
+      return _json({
+        'categories': [
+          {'id': 8, 'name': 'Tradicion oral'},
+        ],
+      });
+    });
+    addTearDown(container.dispose);
+
+    await container.read(storyCategoryProvider.notifier).load();
+
+    final category = container.read(storyCategoryProvider).categories.single;
+    expect(category.id, 8);
+    expect(category.name, 'Tradicion oral');
+  });
+
+  test(
+    'favorite stories come from the protected saved stories endpoint',
+    () async {
+      final container = _containerWithClient((request) async {
+        if (request.url.path.endsWith('/auth/login')) {
+          return _json({'token': 'jwt-token'});
+        }
+        if (request.url.path.endsWith('/users/profile')) {
+          return _json({
+            'id': 7,
+            'username': 'Ana',
+            'email': 'ana@patrimonia.app',
+            'role_id': 2,
+            'role_name': 'turista',
+          });
+        }
+        if (request.url.path.endsWith('/users/profile/favorites')) {
+          expect(request.headers['Authorization'], 'Bearer jwt-token');
+          return _json([
+            {
+              'id': 21,
+              'title': 'Historia favorita',
+              'content_text': 'Contenido',
+              'category': {'id': 1, 'name': 'Leyendas'},
+              'community': {'id': 2, 'name': 'Comunidad de prueba'},
+              'is_favorite': true,
+            },
+          ]);
+        }
+        return _json([]);
+      });
+      addTearDown(container.dispose);
+
+      await container
+          .read(authProvider.notifier)
+          .login(email: 'ana@patrimonia.app', password: 'PatrimonIA123');
+      final favorites = await container
+          .read(memoryProvider.notifier)
+          .loadFavoriteStories();
+
+      expect(favorites.single.title, 'Historia favorita');
+      expect(favorites.single.isFavorite, true);
     },
   );
 

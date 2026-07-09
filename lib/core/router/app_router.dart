@@ -12,6 +12,7 @@ import '../../features/guardian/presentation/pages/recording_preview_page.dart';
 import '../../features/notifications/presentation/pages/notifications_page.dart';
 import '../../features/comunity/presentation/pages/ommunity_selector_page.dart';
 import '../../features/explore/presentation/pages/empty_home_page.dart';
+import '../../features/profile/presentation/pages/saved_stories_page.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
   final goRouter = GoRouter(
@@ -35,37 +36,25 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       return null;
     },
     routes: [
-      GoRoute(
-        path: '/splash',
-        builder: (_, __) => const SplashPage(),
-      ),
-      GoRoute(
-        path: '/onboarding',
-        builder: (_, __) => const OnboardingPage(),
-      ),
-      GoRoute(
-        path: '/login',
-        builder: (_, __) => const LoginPage(),
-      ),
-      GoRoute(
-        path: '/register',
-        builder: (_, __) => const RegisterPage(),
-      ),
-      GoRoute(
-        path: '/',
-        builder: (_, __) => const MainNavigationLayout(),
-      ),
-      GoRoute(
-        path: '/detail',
-        builder: (_, __) => const DetailPage(),
-      ),
+      GoRoute(path: '/splash', builder: (_, __) => const SplashPage()),
+      GoRoute(path: '/onboarding', builder: (_, __) => const OnboardingPage()),
+      GoRoute(path: '/login', builder: (_, __) => const LoginPage()),
+      GoRoute(path: '/register', builder: (_, __) => const RegisterPage()),
+      GoRoute(path: '/', builder: (_, __) => const MainNavigationLayout()),
+      GoRoute(path: '/detail', builder: (_, __) => const DetailPage()),
       GoRoute(
         path: '/story-detail',
         builder: (_, __) => const StoryDetailPage(),
       ),
       GoRoute(
         path: '/preview',
-        builder: (_, __) => const RecordingPreviewPage(),
+        builder: (_, state) => RecordingPreviewPage(
+          data: state.extra as Map<String, dynamic>? ?? const {},
+        ),
+      ),
+      GoRoute(
+        path: '/saved-stories',
+        builder: (_, __) => const SavedStoriesPage(),
       ),
       GoRoute(
         path: '/notifications',
@@ -75,10 +64,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/community',
         builder: (_, __) => const CommunitySelectorPage(),
       ),
-      GoRoute(
-        path: '/empty',
-        builder: (_, __) => const EmptyHomePage(),
-      ),
+      GoRoute(path: '/empty', builder: (_, __) => const EmptyHomePage()),
     ],
   );
 

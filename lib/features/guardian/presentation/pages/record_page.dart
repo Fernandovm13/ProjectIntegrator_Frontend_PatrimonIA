@@ -1,260 +1,229 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../../../shared/theme/app_colors.dart';
-import '../../../../shared/theme/theme_colors_extension.dart';
+import 'package:speech_to_text/speech_to_text.dart';
 
-class RecordMemoryPage extends StatefulWidget {
+import '../../../../shared/theme/theme_colors_extension.dart';
+import '../providers/story_category_provider.dart';
+
+enum _StoryInputMode { write, dictate }
+
+class RecordMemoryPage extends ConsumerStatefulWidget {
   const RecordMemoryPage({super.key});
 
   @override
-  State<RecordMemoryPage> createState() => _RecordMemoryPageState();
+  ConsumerState<RecordMemoryPage> createState() => _RecordMemoryPageState();
 }
 
-class _RecordMemoryPageState extends State<RecordMemoryPage> {
-  String? _selectedStoryType;
-  String? _selectedCategory;
+class _RecordMemoryPageState extends ConsumerState<RecordMemoryPage> {
+  final _titleController = TextEditingController();
+  final _storyController = TextEditingController();
+  final _speech = SpeechToText();
+  _StoryInputMode _mode = _StoryInputMode.write;
+  StoryCategory? _category;
+  bool _speechReady = false;
 
-  final List<String> _storyTypes = [
-    'Una leyenda local',
-    'Un personaje histórico',
-    'Una tradición familiar',
-    'Un ritual',
-    'Otro...',
-  ];
+  @override
+  void dispose() {
+    _speech.stop();
+    _titleController.dispose();
+    _storyController.dispose();
+    super.dispose();
+  }
 
-  final List<_CategoryInfo> _categories = [
-    const _CategoryInfo('Leyenda', Icons.eco, AppColors.categoryLeyenda),
-    const _CategoryInfo('Fiesta', Icons.celebration, AppColors.categoryTradicion),
-    const _CategoryInfo('Ritual', Icons.auto_awesome, AppColors.categoryRitual),
-  ];
+  Future<void> _toggleListening() async {
+    if (_speech.isListening) {
+      await _speech.stop();
+      if (mounted) setState(() {});
+      return;
+    }
+
+    if (!_speechReady) {
+      _speechReady = await _speech.initialize(
+        onStatus: (_) {
+          if (mounted) setState(() {});
+        },
+        onError: (error) {
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('No se pudo reconocer la voz: ${error.errorMsg}'),
+            ),
+          );
+          setState(() {});
+        },
+      );
+    }
+    if (!_speechReady) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('El reconocimiento de voz no esta disponible.'),
+          ),
+        );
+      }
+      return;
+    }
+
+    await _speech.listen(
+      listenOptions: SpeechListenOptions(
+        localeId: 'es_MX',
+        listenMode: ListenMode.dictation,
+      ),
+      onResult: (result) {
+        _storyController.text = result.recognizedWords;
+        _storyController.selection = TextSelection.collapsed(
+          offset: _storyController.text.length,
+        );
+        if (mounted) setState(() {});
+      },
+    );
+    if (mounted) setState(() {});
+  }
+
+  void _continue() {
+    if (_category == null ||
+        _titleController.text.trim().isEmpty ||
+        _storyController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Completa el titulo, la categoria y la historia.'),
+        ),
+      );
+      return;
+    }
+    context.push(
+      '/preview',
+      extra: {
+        'categoryId': _category!.id,
+        'category': _category!.name,
+        'title': _titleController.text.trim(),
+        'transcription': _storyController.text.trim(),
+        'wasDictated': _mode == _StoryInputMode.dictate,
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
+    final categoryState = ref.watch(storyCategoryProvider);
     return Scaffold(
       backgroundColor: context.surface,
       appBar: AppBar(
         backgroundColor: context.appBarBg,
-        elevation: 0,
         leading: IconButton(
           icon: Icon(Icons.arrow_back, color: context.textPrimary),
           onPressed: () => context.pop(),
         ),
         title: Text(
-          'Guardar una Memoria',
-          style: TextStyle(
-            fontFamily: 'Playfair Display',
-            color: context.textPrimary,
-            fontSize: 16,
-          ),
+          'Guardar una memoria',
+          style: TextStyle(color: context.textPrimary),
         ),
       ),
-      body: SingleChildScrollView(
+      body: ListView(
         padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              '¿Qué historia quieres contar?',
-              style: TextStyle(
-                fontFamily: 'Playfair Display',
-                fontWeight: FontWeight.bold,
-                fontSize: 20,
-                color: context.maizeGold,
+        children: [
+          Text(
+            '¿Como quieres contar tu historia?',
+            style: TextStyle(
+              fontFamily: 'Playfair Display',
+              fontWeight: FontWeight.bold,
+              fontSize: 20,
+              color: context.textPrimary,
+            ),
+          ),
+          const SizedBox(height: 16),
+          SegmentedButton<_StoryInputMode>(
+            segments: const [
+              ButtonSegment(
+                value: _StoryInputMode.write,
+                icon: Icon(Icons.edit_outlined),
+                label: Text('Escribir'),
               ),
-            ),
-            const SizedBox(height: 16),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: _storyTypes.map((type) {
-                final isSelected = _selectedStoryType == type;
-                return GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      _selectedStoryType = isSelected ? null : type;
-                    });
-                  },
-                  child: _buildStoryChip(context, type, isSelected),
-                );
-              }).toList(),
-            ),
-            const SizedBox(height: 24),
-            Text(
-              'Selecciona una categoría',
-              style: TextStyle(
-                fontFamily: 'Playfair Display',
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-                color: context.textPrimary,
+              ButtonSegment(
+                value: _StoryInputMode.dictate,
+                icon: Icon(Icons.mic_none),
+                label: Text('Dictar'),
               ),
+            ],
+            selected: {_mode},
+            onSelectionChanged: (value) async {
+              if (_speech.isListening) await _speech.stop();
+              setState(() => _mode = value.first);
+            },
+          ),
+          const SizedBox(height: 24),
+          TextField(
+            controller: _titleController,
+            textCapitalization: TextCapitalization.sentences,
+            decoration: const InputDecoration(
+              labelText: 'Titulo',
+              border: OutlineInputBorder(),
             ),
+          ),
+          const SizedBox(height: 16),
+          if (categoryState.isLoading)
+            const Center(child: CircularProgressIndicator())
+          else if (categoryState.errorMessage != null)
+            Row(
+              children: [
+                Expanded(child: Text(categoryState.errorMessage!)),
+                IconButton(
+                  tooltip: 'Reintentar',
+                  onPressed: () =>
+                      ref.read(storyCategoryProvider.notifier).load(),
+                  icon: const Icon(Icons.refresh),
+                ),
+              ],
+            )
+          else
+            DropdownButtonFormField<StoryCategory>(
+              initialValue: _category,
+              decoration: const InputDecoration(
+                labelText: 'Categoria',
+                border: OutlineInputBorder(),
+              ),
+              items: categoryState.categories
+                  .map(
+                    (item) =>
+                        DropdownMenuItem(value: item, child: Text(item.name)),
+                  )
+                  .toList(),
+              onChanged: (value) => setState(() => _category = value),
+            ),
+          const SizedBox(height: 16),
+          TextField(
+            controller: _storyController,
+            minLines: 8,
+            maxLines: 14,
+            readOnly: _mode == _StoryInputMode.dictate && _speech.isListening,
+            textCapitalization: TextCapitalization.sentences,
+            decoration: InputDecoration(
+              labelText: _mode == _StoryInputMode.write
+                  ? 'Escribe tu historia'
+                  : 'Texto reconocido',
+              alignLabelWithHint: true,
+              border: const OutlineInputBorder(),
+            ),
+          ),
+          if (_mode == _StoryInputMode.dictate) ...[
             const SizedBox(height: 12),
-            GridView.count(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              crossAxisCount: 3,
-              mainAxisSpacing: 12,
-              crossAxisSpacing: 12,
-              childAspectRatio: 0.9,
-              children: _categories.map((cat) {
-                final isSelected = _selectedCategory == cat.label;
-                return GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      _selectedCategory = isSelected ? null : cat.label;
-                    });
-                  },
-                  child: _buildCategoryCard(
-                    context,
-                    cat.icon,
-                    cat.label,
-                    isSelected,
-                    cat.color,
-                  ),
-                );
-              }).toList(),
-            ),
-            const SizedBox(height: 32),
-            Center(
-              child: Column(
-                children: [
-                  GestureDetector(
-                    onTap: () {
-                      if (_selectedCategory != null) {
-                        context.push('/preview', extra: {
-                          'category': _selectedCategory,
-                          'type': _selectedStoryType,
-                        });
-                      }
-                    },
-                    child: Container(
-                      height: 70,
-                      width: 70,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: context.sacredJade,
-                        boxShadow: [
-                          BoxShadow(
-                            color: context.sacredJade.withValues(alpha: 0.3),
-                            blurRadius: 15,
-                            spreadRadius: 3,
-                          ),
-                        ],
-                      ),
-                      child: const Icon(Icons.mic, color: Colors.white, size: 30),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    'Toca para grabar',
-                    style: TextStyle(
-                      color: context.textBody,
-                      fontSize: 14,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  _buildInactiveWaveform(context),
-                  const SizedBox(height: 12),
-                  GestureDetector(
-                    onTap: () => context.pop(),
-                    child: Text(
-                      'Cancelar',
-                      style: TextStyle(
-                        color: context.textSecondary,
-                        fontSize: 13,
-                      ),
-                    ),
-                  ),
-                ],
+            FilledButton.icon(
+              onPressed: _toggleListening,
+              icon: Icon(_speech.isListening ? Icons.stop : Icons.mic),
+              label: Text(
+                _speech.isListening ? 'Detener dictado' : 'Comenzar dictado',
               ),
             ),
           ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildStoryChip(BuildContext context, String label, bool isSelected) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-      decoration: BoxDecoration(
-        color: isSelected ? context.sacredJade : context.card,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: isSelected ? context.sacredJade : context.border,
-        ),
-      ),
-      child: Text(
-        label,
-        style: TextStyle(
-          fontSize: 13,
-          color: isSelected ? Colors.white : context.textBody,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildCategoryCard(
-    BuildContext context,
-    IconData icon,
-    String label,
-    bool isSelected,
-    Color badgeColor,
-  ) {
-    return Container(
-      decoration: BoxDecoration(
-        color: isSelected ? badgeColor : context.card,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: isSelected ? badgeColor : context.border,
-          width: isSelected ? 2 : 1,
-        ),
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            icon,
-            size: 28,
-            color: isSelected ? Colors.white : context.textSecondary,
-          ),
-          const SizedBox(height: 6),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: isSelected ? Colors.white : context.textBody,
-            ),
+          const SizedBox(height: 24),
+          FilledButton.icon(
+            onPressed: _continue,
+            icon: const Icon(Icons.preview_outlined),
+            label: const Text('Revisar antes de guardar'),
           ),
         ],
       ),
     );
   }
-
-  Widget _buildInactiveWaveform(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: List.generate(
-        12,
-        (index) => Container(
-          margin: const EdgeInsets.symmetric(horizontal: 2),
-          width: 3,
-          height: 12,
-          decoration: BoxDecoration(
-            color: context.textSecondary.withValues(alpha: 0.3),
-            borderRadius: BorderRadius.circular(2),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _CategoryInfo {
-  final String label;
-  final IconData icon;
-  final Color color;
-
-  const _CategoryInfo(this.label, this.icon, this.color);
 }

@@ -39,10 +39,7 @@ class UserProfilePage extends ConsumerWidget {
                     child: Container(
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        border: Border.all(
-                          color: context.maizeGold,
-                          width: 2,
-                        ),
+                        border: Border.all(color: context.maizeGold, width: 2),
                       ),
                       child: const CircleAvatar(
                         radius: 31,
@@ -94,10 +91,7 @@ class UserProfilePage extends ConsumerWidget {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 24,
-                vertical: 20,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
               child: Column(
                 children: [
                   Row(
@@ -106,6 +100,7 @@ class UserProfilePage extends ConsumerWidget {
                         context,
                         '${user?.storiesSaved ?? 0}',
                         'Historias guardadas',
+                        onTap: () => context.push('/saved-stories'),
                       ),
                       const SizedBox(width: 12),
                       _buildStatCard(
@@ -134,18 +129,17 @@ class UserProfilePage extends ConsumerWidget {
                           color: context.textPrimary,
                         ),
                       ),
-                      Text(
-                        'Ver todas',
-                        style: TextStyle(
-                          color: context.sacredJade,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 13,
-                        ),
+                      TextButton(
+                        onPressed: () => context.push('/saved-stories'),
+                        child: const Text('Ver todas'),
                       ),
                     ],
                   ),
                   const SizedBox(height: 12),
-                  for (final memory in memories) _buildMemoryItem(context, memory, ref),
+                  for (final memory in memories.where(
+                    (item) => item.isFavorite,
+                  ))
+                    _buildMemoryItem(context, memory, ref),
                   const SizedBox(height: 24),
                   Text(
                     'Configuracion',
@@ -163,7 +157,11 @@ class UserProfilePage extends ConsumerWidget {
                         : () => ref.read(authProvider.notifier).fetchProfile(),
                     child: Row(
                       children: [
-                        Icon(Icons.refresh, color: context.sacredJade, size: 20),
+                        Icon(
+                          Icons.refresh,
+                          color: context.sacredJade,
+                          size: 20,
+                        ),
                         const SizedBox(width: 12),
                         Text(
                           authState.isLoading
@@ -240,35 +238,41 @@ class UserProfilePage extends ConsumerWidget {
     );
   }
 
-  Widget _buildStatCard(BuildContext context, String value, String label) {
+  Widget _buildStatCard(
+    BuildContext context,
+    String value,
+    String label, {
+    VoidCallback? onTap,
+  }) {
     return Expanded(
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 16),
-        decoration: BoxDecoration(
-          color: context.card,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: context.border, width: 0.5),
-        ),
-        child: Column(
-          children: [
-            Text(
-              value,
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 22,
-                color: context.textPrimary,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(8),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          decoration: BoxDecoration(
+            color: context.card,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: context.border, width: 0.5),
+          ),
+          child: Column(
+            children: [
+              Text(
+                value,
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 22,
+                  color: context.textPrimary,
+                ),
               ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 11,
-                color: context.textSecondary,
+              const SizedBox(height: 4),
+              Text(
+                label,
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 11, color: context.textSecondary),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
