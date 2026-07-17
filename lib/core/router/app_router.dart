@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'route_observer.dart';
 import '../../features/auth/presentation/providers/auth_provider.dart';
 import '../../features/auth/presentation/pages/splash_page.dart';
 import '../../features/auth/presentation/pages/onboarding_page.dart';
@@ -17,6 +18,7 @@ import '../../features/profile/presentation/pages/saved_stories_page.dart';
 final appRouterProvider = Provider<GoRouter>((ref) {
   final goRouter = GoRouter(
     initialLocation: '/splash',
+    observers: [appRouteObserver],
     redirect: (context, state) {
       final authState = ref.read(authProvider);
       final location = state.matchedLocation;

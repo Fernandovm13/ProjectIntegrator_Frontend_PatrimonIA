@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../core/platform/screen_security.dart';
+import '../../../../core/router/route_observer.dart';
 import '../../../../shared/theme/app_colors.dart';
 import '../../../../shared/theme/theme_colors_extension.dart';
 import '../../../../shared/widgets/primary_button.dart';
@@ -14,13 +16,42 @@ class LoginPage extends ConsumerStatefulWidget {
   ConsumerState<LoginPage> createState() => _LoginPageState();
 }
 
-class _LoginPageState extends ConsumerState<LoginPage> {
+class _LoginPageState extends ConsumerState<LoginPage> with RouteAware {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
+  ModalRoute<void>? _route;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final route = ModalRoute.of(context);
+    if (_route != route) {
+      if (_route != null) appRouteObserver.unsubscribe(this);
+      _route = route;
+      if (route != null) appRouteObserver.subscribe(this, route);
+    }
+  }
+
+  @override
+  void didPush() {
+    ScreenSecurity.setSecure(true);
+  }
+
+  @override
+  void didPushNext() {
+    ScreenSecurity.setSecure(false);
+  }
+
+  @override
+  void didPopNext() {
+    ScreenSecurity.setSecure(true);
+  }
 
   @override
   void dispose() {
+    appRouteObserver.unsubscribe(this);
+    ScreenSecurity.setSecure(false);
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
