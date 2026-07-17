@@ -3,14 +3,14 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'app.dart';
+import 'core/security/fake_gps_guard.dart';
 
 void main() {
   runApp(
     DevicePreview(
       enabled: !kReleaseMode,
-      builder: (context) => const ProviderScope(
-        child: PatrimonIAApp(),
-      ),
+      builder: (context) =>
+          const FakeGpsGuard(child: ProviderScope(child: PatrimonIAApp())),
     ),
   );
 }
