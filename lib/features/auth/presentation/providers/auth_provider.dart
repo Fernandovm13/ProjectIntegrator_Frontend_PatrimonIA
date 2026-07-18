@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/api/api_client.dart';
 import '../../../../core/models/user.dart';
+import '../../../../core/security/secure_session_storage.dart';
 
 class AuthState {
   final bool isAuthenticated;
@@ -41,9 +42,11 @@ class AuthState {
 }
 
 class AuthNotifier extends StateNotifier<AuthState> {
-  AuthNotifier(this._apiClient) : super(const AuthState());
+  AuthNotifier(this._apiClient, this._sessionStorage)
+    : super(const AuthState());
 
   final ApiClient _apiClient;
+  final SessionStorage _sessionStorage;
 
   Future<void> login({required String email, required String password}) async {
     state = state.copyWith(isLoading: true, clearError: true);
@@ -65,6 +68,11 @@ class AuthNotifier extends StateNotifier<AuthState> {
       }
 
       final profile = await _fetchProfile(token);
+      await _sessionStorage.saveSession(
+        token: token,
+        lastActivityAt: DateTime.now(),
+        timeout: sessionInactivityTimeout,
+      );
 
       state = state.copyWith(
         isAuthenticated: true,
@@ -124,6 +132,14 @@ class AuthNotifier extends StateNotifier<AuthState> {
             })
           : await _fetchProfile(token, fallback: sessionUser);
 
+      if (token != null && token.isNotEmpty) {
+        await _sessionStorage.saveSession(
+          token: token,
+          lastActivityAt: DateTime.now(),
+          timeout: sessionInactivityTimeout,
+        );
+      }
+
       state = state.copyWith(
         isAuthenticated: true,
         user: profile,
@@ -169,8 +185,28 @@ class AuthNotifier extends StateNotifier<AuthState> {
     state = state.copyWith(user: user);
   }
 
-  void logout() {
+  Future<void> logout() async {
+    await _sessionStorage.clear();
     state = const AuthState();
+  }
+
+  Future<void> expireDueToInactivity({
+    required DateTime lastActivityAt,
+    Duration timeout = sessionInactivityTimeout,
+  }) async {
+    final token = state.token;
+    if (!state.isAuthenticated || token == null) return;
+
+    await _sessionStorage.markExpired(
+      token: token,
+      lastActivityAt: lastActivityAt,
+      expiredAt: DateTime.now(),
+      timeout: timeout,
+    );
+    state = const AuthState(
+      errorMessage:
+          'Tu sesión se cerró por inactividad. Inicia sesión nuevamente.',
+    );
   }
 
   Future<AppUser> _fetchProfile(
@@ -276,5 +312,12 @@ class AuthNotifier extends StateNotifier<AuthState> {
 }
 
 final authProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref) {
-  return AuthNotifier(ref.watch(apiClientProvider));
+  return AuthNotifier(
+    ref.watch(apiClientProvider),
+    ref.watch(sessionStorageProvider),
+  );
+});
+
+final sessionStorageProvider = Provider<SessionStorage>((ref) {
+  return SecureSessionStorage();
 });

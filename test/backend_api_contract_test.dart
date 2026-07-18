@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:patrimonia/core/api/api_client.dart';
 import 'package:patrimonia/core/api/api_config.dart';
+import 'package:patrimonia/core/security/secure_session_storage.dart';
 import 'package:patrimonia/features/auth/presentation/providers/auth_provider.dart';
 import 'package:patrimonia/features/explore/presentation/providers/community_provider.dart';
 import 'package:patrimonia/features/explore/presentation/providers/memory_provider.dart';
@@ -80,6 +81,7 @@ void main() {
   );
 
   test('auth provider logs in and maps backend profile fields', () async {
+    final sessionStorage = _MemorySessionStorage();
     final container = _containerWithClient((request) async {
       if (request.url.path.endsWith('/auth/login')) {
         expect(jsonDecode(request.body), {
@@ -112,7 +114,7 @@ void main() {
         });
       }
       return http.Response('Not found', 404);
-    });
+    }, sessionStorage: sessionStorage);
     addTearDown(container.dispose);
 
     await container
@@ -125,6 +127,18 @@ void main() {
     expect(state.user?.name, 'Ana Exploradora');
     expect(state.user?.storiesSaved, 2);
     expect(state.isGuardian, false);
+    expect(sessionStorage.token, 'jwt-token');
+    expect(sessionStorage.lastActivityAt, isNotNull);
+    expect(sessionStorage.timeout, sessionInactivityTimeout);
+
+    await container
+        .read(authProvider.notifier)
+        .expireDueToInactivity(lastActivityAt: sessionStorage.lastActivityAt!);
+
+    expect(container.read(authProvider).isAuthenticated, false);
+    expect(container.read(authProvider).errorMessage, contains('inactividad'));
+    expect(sessionStorage.token, 'jwt-token');
+    expect(sessionStorage.expiredAt, isNotNull);
   });
 
   test(
@@ -299,16 +313,65 @@ void main() {
 }
 
 ProviderContainer _containerWithClient(
-  Future<http.Response> Function(http.Request) handler,
-) {
+  Future<http.Response> Function(http.Request) handler, {
+  SessionStorage? sessionStorage,
+}) {
   return ProviderContainer(
     overrides: [
       apiConfigProvider.overrideWithValue(
         const ApiConfig(baseUrl: 'http://10.0.2.2:8080/api'),
       ),
       httpClientProvider.overrideWithValue(MockClient(handler)),
+      sessionStorageProvider.overrideWithValue(
+        sessionStorage ?? _MemorySessionStorage(),
+      ),
     ],
   );
+}
+
+class _MemorySessionStorage implements SessionStorage {
+  String? token;
+  DateTime? lastActivityAt;
+  DateTime? expiredAt;
+  Duration? timeout;
+
+  @override
+  Future<void> saveSession({
+    required String token,
+    required DateTime lastActivityAt,
+    required Duration timeout,
+  }) async {
+    this.token = token;
+    this.lastActivityAt = lastActivityAt;
+    this.timeout = timeout;
+    expiredAt = null;
+  }
+
+  @override
+  Future<void> saveLastActivity(DateTime lastActivityAt) async {
+    this.lastActivityAt = lastActivityAt;
+  }
+
+  @override
+  Future<void> markExpired({
+    required String token,
+    required DateTime lastActivityAt,
+    required DateTime expiredAt,
+    required Duration timeout,
+  }) async {
+    this.token = token;
+    this.lastActivityAt = lastActivityAt;
+    this.expiredAt = expiredAt;
+    this.timeout = timeout;
+  }
+
+  @override
+  Future<void> clear() async {
+    token = null;
+    lastActivityAt = null;
+    expiredAt = null;
+    timeout = null;
+  }
 }
 
 http.Response _json(Object body, {int status = 200}) {
