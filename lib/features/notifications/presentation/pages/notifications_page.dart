@@ -1,15 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../shared/theme/theme_colors_extension.dart';
-import '../../../../core/models/notification_item.dart';
-import '../../../explore/presentation/providers/notification_provider.dart';
+import '../../domain/models/notification_item.dart';
+import '../riverpod/notification_riverpod.dart';
 
 class NotificationsPage extends ConsumerWidget {
   const NotificationsPage({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final notifications = ref.watch(notificationProvider);
+    final notifications =
+        ref.watch(notificationProvider).asData?.value.notifications ??
+        const <NotificationItem>[];
 
     final grouped = <String, List<NotificationItem>>{};
     for (final n in notifications) {

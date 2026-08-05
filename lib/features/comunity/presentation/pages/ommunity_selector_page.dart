@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../shared/theme/theme_colors_extension.dart';
-import '../../../../core/models/community.dart';
-import '../../../explore/presentation/providers/community_provider.dart';
+import '../../../explore/domain/models/community.dart';
+import '../../../explore/presentation/riverpod/community_riverpod.dart';
 
 class CommunitySelectorPage extends ConsumerStatefulWidget {
   const CommunitySelectorPage({super.key});
@@ -25,7 +25,8 @@ class _CommunitySelectorPageState extends ConsumerState<CommunitySelectorPage> {
   @override
   Widget build(BuildContext context) {
     final communityState = ref.watch(communityProvider);
-    final communities = communityState.communities;
+    final communities =
+        communityState.asData?.value.communities ?? const <Community>[];
 
     final filtered = _searchController.text.isEmpty
         ? communities

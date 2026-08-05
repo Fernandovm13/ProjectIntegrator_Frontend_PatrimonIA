@@ -4,8 +4,8 @@ import 'package:go_router/go_router.dart';
 import '../../../../shared/theme/app_colors.dart';
 import '../../../../shared/theme/theme_colors_extension.dart';
 import '../../../../shared/widgets/audio_player_widget.dart';
-import '../../../../core/models/memory.dart';
-import '../providers/memory_provider.dart';
+import '../../domain/models/memory.dart';
+import '../riverpod/memory_riverpod.dart';
 
 class DetailPage extends ConsumerWidget {
   const DetailPage({super.key});

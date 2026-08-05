@@ -3,9 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../shared/theme/app_colors.dart';
 import '../../../../shared/theme/theme_colors_extension.dart';
-import '../../../../core/models/memory.dart';
-import '../../../explore/presentation/providers/memory_provider.dart';
-import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../../explore/domain/models/memory.dart';
+import '../../../explore/presentation/riverpod/memory_riverpod.dart';
+import '../../../auth/presentation/riverpod/auth_riverpod.dart';
 
 class UserProfilePage extends ConsumerWidget {
   const UserProfilePage({super.key});
@@ -13,8 +13,9 @@ class UserProfilePage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(authProvider);
-    final user = authState.user;
-    final memories = ref.watch(memoryProvider);
+    final user = authState.asData?.value.user;
+    final memories =
+        ref.watch(memoryProvider).asData?.value.memories ?? const <Memory>[];
 
     return Scaffold(
       backgroundColor: context.surface,

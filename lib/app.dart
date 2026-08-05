@@ -1,28 +1,49 @@
-import 'package:device_preview/device_preview.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'core/router/app_router.dart';
+
+import 'core/config/router.dart';
+import 'core/di/app_container.dart';
 import 'shared/theme/material_theme.dart';
 import 'shared/theme/util.dart';
 
-class PatrimonIAApp extends ConsumerWidget {
+class PatrimonIAApp extends ConsumerStatefulWidget {
   const PatrimonIAApp({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final router = ref.watch(appRouterProvider);
-    TextTheme textTheme = createTextTheme('Poppins', 'Nunito');
-    MaterialTheme materialTheme = MaterialTheme(textTheme);
+  ConsumerState<PatrimonIAApp> createState() => _PatrimonIAAppState();
+}
+
+class _PatrimonIAAppState extends ConsumerState<PatrimonIAApp> {
+  @override
+  void initState() {
+    super.initState();
+    ref.read(appContainerProvider.notifier).init();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final container = ref.watch(appContainerProvider);
+
+    if (container == null) {
+      return MaterialApp(
+        title: 'PatrimonIA',
+        debugShowCheckedModeBanner: false,
+        home: const Scaffold(
+          body: Center(child: CircularProgressIndicator()),
+        ),
+      );
+    }
+
+    final textTheme = createTextTheme('Poppins', 'Nunito');
+    final materialTheme = MaterialTheme(textTheme);
 
     return MaterialApp.router(
       title: 'PatrimonIA',
       debugShowCheckedModeBanner: false,
-      locale: DevicePreview.locale(context),
-      builder: DevicePreview.appBuilder,
       theme: materialTheme.light(),
       darkTheme: materialTheme.dark(),
       themeMode: ThemeMode.system,
-      routerConfig: router,
+      routerConfig: ref.watch(appRouterProvider),
     );
   }
 }

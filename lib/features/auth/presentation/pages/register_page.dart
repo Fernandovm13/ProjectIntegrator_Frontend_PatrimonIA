@@ -5,7 +5,7 @@ import '../../../../shared/theme/app_colors.dart';
 import '../../../../shared/theme/theme_colors_extension.dart';
 import '../../../../shared/widgets/primary_button.dart';
 import '../../../../shared/widgets/underline_input.dart';
-import '../providers/auth_provider.dart';
+import '../riverpod/auth_riverpod.dart';
 
 class RegisterPage extends ConsumerStatefulWidget {
   const RegisterPage({super.key});
@@ -40,125 +40,156 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
 
   @override
   Widget build(BuildContext context) {
+    final authAsync = ref.watch(authProvider);
+
     return Scaffold(
       backgroundColor: context.surface,
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            Container(
-              width: double.infinity,
-              height: 160,
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [AppColors.headerStart, AppColors.headerEnd],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-              ),
-              child: Stack(
-                children: [
-                  Positioned(
-                    left: 8,
-                    top: 40,
-                    child: IconButton(
-                      icon: const Icon(Icons.arrow_back, color: Colors.white),
-                      onPressed: () => context.pop(),
-                    ),
-                  ),
-                  Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Text(
-                          'Únete a PatrimonIA',
-                          style: TextStyle(
-                            fontFamily: 'Playfair Display',
-                            fontWeight: FontWeight.bold,
-                            fontSize: 20,
-                            color: Colors.white,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        _buildDotPattern(context),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
+      body: authAsync.when(
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (error, stack) => Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Text(
+              'No se pudo crear la cuenta: $error',
+              style: const TextStyle(fontSize: 14),
+              textAlign: TextAlign.center,
             ),
-            Padding(
-              padding: const EdgeInsets.all(24),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+          ),
+        ),
+        data: (authState) => SingleChildScrollView(
+          child: Column(
+            children: [
+              Container(
+                width: double.infinity,
+                height: 160,
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [AppColors.headerStart, AppColors.headerEnd],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                ),
+                child: Stack(
                   children: [
-                    UnderlineInput(
-                      controller: _nameController,
-                      hint: 'Tu nombre',
-                      validator: (v) =>
-                          v != null && v.trim().isNotEmpty ? null : 'Campo requerido',
-                    ),
-                    const SizedBox(height: 20),
-                    UnderlineInput(
-                      controller: _emailController,
-                      hint: 'tu@correo.com',
-                      validator: (v) =>
-                          v != null && v.contains('@') ? null : 'Correo inválido',
-                    ),
-                    const SizedBox(height: 20),
-                    UnderlineInput(
-                      controller: _passwordController,
-                      hint: '········',
-                      isPassword: true,
-                      validator: (v) =>
-                          v != null && v.length >= 3 ? null : 'Mínimo 3 caracteres',
-                    ),
-                    const SizedBox(height: 24),
-                    Text(
-                      '¿Cómo quieres participar?',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 15,
-                        color: context.textPrimary,
+                    Positioned(
+                      left: 8,
+                      top: 40,
+                      child: IconButton(
+                        icon: const Icon(Icons.arrow_back, color: Colors.white),
+                        onPressed: () => context.pop(),
                       ),
                     ),
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _RoleCard(
-                            icon: Icons.language,
-                            label: 'Explorador',
-                            subtitle: 'Descubre historias',
-                            isSelected: selectedRole == 'explorador',
-                            onTap: () =>
-                                setState(() => selectedRole = 'explorador'),
+                    Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Text(
+                            'Únete a PatrimonIA',
+                            style: TextStyle(
+                              fontFamily: 'Playfair Display',
+                              fontWeight: FontWeight.bold,
+                              fontSize: 20,
+                              color: Colors.white,
+                            ),
                           ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: _RoleCard(
-                            icon: Icons.person,
-                            label: 'Guardián',
-                            subtitle: 'Comparte memorias',
-                            isSelected: selectedRole == 'guardian',
-                            onTap: () =>
-                                setState(() => selectedRole = 'guardian'),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 32),
-                    PrimaryButton(
-                      text: 'Crear cuenta',
-                      onPressed: _doRegister,
+                          const SizedBox(height: 8),
+                          _buildDotPattern(context),
+                        ],
+                      ),
                     ),
                   ],
                 ),
               ),
-            ),
-          ],
+              Padding(
+                padding: const EdgeInsets.all(24),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      UnderlineInput(
+                        controller: _nameController,
+                        hint: 'Tu nombre',
+                        validator: (v) =>
+                            v != null && v.trim().isNotEmpty
+                                ? null
+                                : 'Campo requerido',
+                      ),
+                      const SizedBox(height: 20),
+                      UnderlineInput(
+                        controller: _emailController,
+                        hint: 'tu@correo.com',
+                        validator: (v) =>
+                            v != null && v.contains('@')
+                                ? null
+                                : 'Correo inválido',
+                      ),
+                      const SizedBox(height: 20),
+                      UnderlineInput(
+                        controller: _passwordController,
+                        hint: '········',
+                        isPassword: true,
+                        validator: (v) =>
+                            v != null && v.length >= 3
+                                ? null
+                                : 'Mínimo 3 caracteres',
+                      ),
+                      if (authState.error != null) ...[
+                        const SizedBox(height: 12),
+                        Text(
+                          authState.error!,
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Theme.of(context).colorScheme.error,
+                          ),
+                        ),
+                      ],
+                      const SizedBox(height: 24),
+                      Text(
+                        '¿Cómo quieres participar?',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 15,
+                          color: context.textPrimary,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _RoleCard(
+                              icon: Icons.language,
+                              label: 'Explorador',
+                              subtitle: 'Descubre historias',
+                              isSelected: selectedRole == 'explorador',
+                              onTap: () =>
+                                  setState(() => selectedRole = 'explorador'),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: _RoleCard(
+                              icon: Icons.person,
+                              label: 'Guardián',
+                              subtitle: 'Comparte memorias',
+                              isSelected: selectedRole == 'guardian',
+                              onTap: () =>
+                                  setState(() => selectedRole = 'guardian'),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 32),
+                      PrimaryButton(
+                        text: 'Crear cuenta',
+                        onPressed: authState.isLoading ? null : _doRegister,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

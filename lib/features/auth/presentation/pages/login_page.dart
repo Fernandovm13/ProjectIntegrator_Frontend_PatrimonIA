@@ -5,7 +5,7 @@ import '../../../../shared/theme/app_colors.dart';
 import '../../../../shared/theme/theme_colors_extension.dart';
 import '../../../../shared/widgets/primary_button.dart';
 import '../../../../shared/widgets/underline_input.dart';
-import '../providers/auth_provider.dart';
+import '../riverpod/auth_riverpod.dart';
 
 class LoginPage extends ConsumerStatefulWidget {
   const LoginPage({super.key});
@@ -36,161 +36,190 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
+    final authAsync = ref.watch(authProvider);
+
     return Scaffold(
       backgroundColor: context.surface,
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            Container(
-              width: double.infinity,
-              height: 180,
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [AppColors.headerStart, AppColors.headerEnd],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
+      body: authAsync.when(
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (error, stack) => Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Text(
+              'No se pudo iniciar sesión: $error',
+              style: const TextStyle(fontSize: 14),
+              textAlign: TextAlign.center,
+            ),
+          ),
+        ),
+        data: (authState) => SingleChildScrollView(
+          child: Column(
+            children: [
+              Container(
+                width: double.infinity,
+                height: 180,
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [AppColors.headerStart, AppColors.headerEnd],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.circle_outlined,
+                      size: 36,
+                      color: context.maizeGold,
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'PatrimonIA',
+                      style: TextStyle(
+                        fontFamily: 'Playfair Display',
+                        fontWeight: FontWeight.bold,
+                        fontSize: 20,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    _buildDotPattern(context),
+                  ],
                 ),
               ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.circle_outlined,
-                    size: 36,
-                    color: context.maizeGold,
-                  ),
-                  const SizedBox(height: 8),
-                  const Text(
-                    'PatrimonIA',
-                    style: TextStyle(
-                      fontFamily: 'Playfair Display',
-                      fontWeight: FontWeight.bold,
-                      fontSize: 20,
-                      color: Colors.white,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  _buildDotPattern(context),
-                ],
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(24),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Bienvenido de vuelta',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 20,
-                        color: context.textPrimary,
+              Padding(
+                padding: const EdgeInsets.all(24),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Bienvenido de vuelta',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 20,
+                          color: context.textPrimary,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 24),
-                    UnderlineInput(
-                      controller: _emailController,
-                      hint: 'tu@correo.com',
-                      validator: (v) =>
-                          v != null && v.contains('@') ? null : 'Correo inválido',
-                    ),
-                    const SizedBox(height: 20),
-                    UnderlineInput(
-                      controller: _passwordController,
-                      hint: '········',
-                      isPassword: true,
-                      validator: (v) =>
-                          v != null && v.length >= 3 ? null : 'Mínimo 3 caracteres',
-                    ),
-                    const SizedBox(height: 32),
-                    PrimaryButton(
-                      text: 'Iniciar sesión',
-                      onPressed: _doLogin,
-                    ),
-                    const SizedBox(height: 20),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Divider(color: context.border),
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 12),
-                          child: Text(
-                            'o continúa como',
-                            style: TextStyle(
-                              color: context.textSecondary,
-                              fontSize: 13,
-                            ),
+                      const SizedBox(height: 24),
+                      UnderlineInput(
+                        controller: _emailController,
+                        hint: 'tu@correo.com',
+                        validator: (v) =>
+                            v != null && v.contains('@')
+                                ? null
+                                : 'Correo inválido',
+                      ),
+                      const SizedBox(height: 20),
+                      UnderlineInput(
+                        controller: _passwordController,
+                        hint: '········',
+                        isPassword: true,
+                        validator: (v) =>
+                            v != null && v.length >= 3
+                                ? null
+                                : 'Mínimo 3 caracteres',
+                      ),
+                      if (authState.error != null) ...[
+                        const SizedBox(height: 12),
+                        Text(
+                          authState.error!,
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Theme.of(context).colorScheme.error,
                           ),
-                        ),
-                        Expanded(
-                          child: Divider(color: context.border),
                         ),
                       ],
-                    ),
-                    const SizedBox(height: 20),
-                    SizedBox(
-                      width: double.infinity,
-                      height: 48,
-                      child: OutlinedButton(
-                        style: OutlinedButton.styleFrom(
-                          side: BorderSide(color: context.copalBrown),
-                          foregroundColor: context.textPrimary,
-                          backgroundColor: context.card,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
+                      const SizedBox(height: 32),
+                      PrimaryButton(
+                        text: 'Iniciar sesión',
+                        onPressed: authState.isLoading ? null : _doLogin,
+                      ),
+                      const SizedBox(height: 20),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Divider(color: context.border),
                           ),
-                        ),
-                        onPressed: () {
-                          ref.read(authProvider.notifier).login();
-                        },
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Icon(Icons.language, size: 20),
-                            const SizedBox(width: 8),
-                            Text(
-                              'Explorador anónimo',
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                            child: Text(
+                              'o continúa como',
                               style: TextStyle(
-                                fontWeight: FontWeight.w500,
-                                color: context.textPrimary,
+                                color: context.textSecondary,
+                                fontSize: 13,
                               ),
                             ),
-                          ],
-                        ),
+                          ),
+                          Expanded(
+                            child: Divider(color: context.border),
+                          ),
+                        ],
                       ),
-                    ),
-                    const SizedBox(height: 32),
-                    Center(
-                      child: GestureDetector(
-                        onTap: () => context.push('/register'),
-                        child: Text.rich(
-                          TextSpan(
-                            text: '¿No tienes cuenta? ',
-                            style: TextStyle(
-                              color: context.textBody,
-                              fontSize: 14,
+                      const SizedBox(height: 20),
+                      SizedBox(
+                        width: double.infinity,
+                        height: 48,
+                        child: OutlinedButton(
+                          style: OutlinedButton.styleFrom(
+                            side: BorderSide(color: context.copalBrown),
+                            foregroundColor: context.textPrimary,
+                            backgroundColor: context.card,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
                             ),
+                          ),
+                          onPressed: () {
+                            ref.read(authProvider.notifier).login();
+                          },
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              TextSpan(
-                                text: 'Regístrate',
+                              const Icon(Icons.language, size: 20),
+                              const SizedBox(width: 8),
+                              Text(
+                                'Explorador anónimo',
                                 style: TextStyle(
-                                  color: context.sacredJade,
-                                  fontWeight: FontWeight.bold,
+                                  fontWeight: FontWeight.w500,
+                                  color: context.textPrimary,
                                 ),
                               ),
                             ],
                           ),
                         ),
                       ),
-                    ),
-                  ],
+                      const SizedBox(height: 32),
+                      Center(
+                        child: GestureDetector(
+                          onTap: () => context.push('/register'),
+                          child: Text.rich(
+                            TextSpan(
+                              text: '¿No tienes cuenta? ',
+                              style: TextStyle(
+                                color: context.textBody,
+                                fontSize: 14,
+                              ),
+                              children: [
+                                TextSpan(
+                                  text: 'Regístrate',
+                                  style: TextStyle(
+                                    color: context.sacredJade,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

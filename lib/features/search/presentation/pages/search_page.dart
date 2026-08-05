@@ -3,8 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../shared/theme/theme_colors_extension.dart';
 import '../../../../shared/widgets/category_chip.dart';
-import '../../../../core/models/memory.dart';
-import '../../../explore/presentation/providers/memory_provider.dart';
+import '../../../explore/domain/models/memory.dart';
+import '../../../explore/presentation/riverpod/memory_riverpod.dart';
 
 class SearchPage extends ConsumerStatefulWidget {
   const SearchPage({super.key});
@@ -141,7 +141,7 @@ class _SearchPageState extends ConsumerState<SearchPage> {
   }
 
   Widget _buildLandingView(BuildContext context) {
-    final memories = ref.watch(memoryProvider);
+    final memories = ref.watch(memoryProvider).asData?.value.memories ?? const <Memory>[];
     return ListView(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       children: [

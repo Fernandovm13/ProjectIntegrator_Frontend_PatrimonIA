@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../shared/widgets/bottom_nav_bar.dart';
-import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../../auth/presentation/riverpod/auth_riverpod.dart';
 import 'home_page.dart';
 import 'home_guardian_page.dart';
 import '../../../narrator/presentation/pages/narrador_page.dart';
@@ -21,8 +21,8 @@ class _MainNavigationLayoutState extends ConsumerState<MainNavigationLayout> {
 
   @override
   Widget build(BuildContext context) {
-    final auth = ref.watch(authProvider);
-    final isGuardian = auth.isGuardian;
+    final auth = ref.watch(authProvider).asData?.value;
+    final isGuardian = auth?.isGuardian ?? false;
 
     final pages = <Widget>[
       isGuardian ? const HomeGuardianPage() : const HomePage(),
